@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBMPE Command Center | App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .apostila-page {
+            background-color: #fdfdfc; 
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 100% 2rem;
+            line-height: 2rem;
+        }
+        .flip-card { perspective: 1000px; height: 300px; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .flip-card-front { background-color: #1e293b; border: 1px solid #334155; }
+        .flip-card-back { background-color: #7f1d1d; color: white; transform: rotateY(180deg); border: 1px solid #991b1b; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col" onload="loadSavedData()">
+
+    <!-- CABEÇALHO -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center flex-wrap gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-red-600 text-white p-2 rounded-lg font-bold flex items-center justify-center shadow-lg shadow-red-600/30">
+                    <i class="fa-solid fa-fire-extinguisher text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight text-white">CBMPE <span class="text-red-500">WEB APP</span></h1>
+                    <p class="text-xs text-emerald-400" id="sync-status"><i class="fa-solid fa-cloud-arrow-up"></i> Dados Salvos no Navegador</p>
+                </div>
+            </div>
+            
+            <div class="bg-slate-950 border border-slate-700 rounded-full px-4 py-1.5 flex items-center space-x-4">
+                <span class="text-red-500 text-sm font-bold"><i class="fa-solid fa-stopwatch mr-1"></i> Pomodoro</span>
+                <span id="timer-display" class="font-mono text-xl font-bold text-white">25:00</span>
+                <div class="flex space-x-2">
+                    <button onclick="startTimer()" class="text-emerald-500 hover:text-emerald-400"><i class="fa-solid fa-play"></i></button>
+                    <button onclick="pauseTimer()" class="text-amber-500 hover:text-amber-400"><i class="fa-solid fa-pause"></i></button>
+                    <button onclick="resetTimer()" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO -->
+    <nav class="bg-slate-900/80 backdrop-blur border-b border-slate-800 overflow-x-auto scrollbar-hide">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-2 py-2 text-sm whitespace-nowrap">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all">Início</button>
+            <button onclick="switchTab('apostila')" id="btn-apostila" class="tab-btn text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-all">Caderno (Caneta)</button>
+            <button onclick="switchTab('edital')" id="btn-edital" class="tab-btn text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-all">Edital & Progresso</button>
+            <button onclick="switchTab('flashcards')" id="btn-flashcards" class="tab-btn text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-all">Flashcards</button>
+            <button onclick="switchTab('redacao')" id="btn-redacao" class="tab-btn text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-all">Redação</button>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ABA: DASHBOARD -->
+        <div id="tab-dashboard" class="space-y-6">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                 <h2 class="text-xl font-bold text-white mb-2">Progresso Global</h2>
+                 <div class="flex justify-between text-xs mb-1">
+                     <span class="text-white font-bold" id="progress-text">0% Concluído</span>
+                     <span class="text-slate-400">Meta: 100%</span>
+                 </div>
+                 <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden">
+                     <div id="progress-bar" class="bg-emerald-500 h-full w-[0%] transition-all duration-500"></div>
+                 </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href="https://www.youtube.com/results?search_query=portugues+instituto+aocp+concurso" target="_blank" class="bg-slate-900 border border-slate-800 p-5 rounded-xl hover:border-red-500 transition block text-center">
+                    <i class="fa-solid fa-play text-red-500 text-3xl mb-2"></i>
+                    <h3 class="font-bold text-white">Buscar Videoaulas</h3>
+                </a>
+                <button onclick="switchTab('apostila')" class="bg-slate-900 border border-slate-800 p-5 rounded-xl hover:border-red-500 transition block text-center">
+                    <i class="fa-solid fa-pen-nib text-red-500 text-3xl mb-2"></i>
+                    <h3 class="font-bold text-white">Continuar Resumos</h3>
+                </button>
+            </div>
+        </div>
+
+        <!-- ABA: EDITAL -->
+        <div id="tab-edital" class="hidden space-y-6">
+            <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-list-check text-red-500 mr-2"></i> Edital Verticalizado</h2>
+            <p class="text-sm text-slate-400">Seu progresso é salvo automaticamente.</p>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <h3 class="text-lg font-bold text-white mb-3 border-b border-slate-800 pb-2">Língua Portuguesa</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="chk-port-1" class="edital-checkbox w-5 h-5 accent-red-600 bg-slate-800 rounded" onchange="updateProgress()">
+                        <span class="text-sm text-slate-300">Compreensão e interpretação de textos</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="chk-port-2" class="edital-checkbox w-5 h-5 accent-red-600 bg-slate-800 rounded" onchange="updateProgress()">
+                        <span class="text-sm text-slate-300">Sintaxe e Regência</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="chk-port-3" class="edital-checkbox w-5 h-5 accent-red-600 bg-slate-800 rounded" onchange="updateProgress()">
+                        <span class="text-sm text-slate-300">Crase</span>
+                    </label>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <h3 class="text-lg font-bold text-white mb-3 border-b border-slate-800 pb-2">Direito Constitucional</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="chk-const-1" class="edital-checkbox w-5 h-5 accent-red-600 bg-slate-800 rounded" onchange="updateProgress()">
+                        <span class="text-sm text-slate-300">Artigo 5º - Direitos Fundamentais</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="chk-const-2" class="edital-checkbox w-5 h-5 accent-red-600 bg-slate-800 rounded" onchange="updateProgress()">
+                        <span class="text-sm text-slate-300">Artigo 144 - Segurança Pública</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA: REDAÇÃO -->
+        <div id="tab-redacao" class="hidden space-y-6">
+            <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-file-pen text-red-500 mr-2"></i> Redação (Salva Automático)</h2>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <textarea id="texto-redacao" oninput="saveRedacao()" class="w-full h-80 bg-slate-950 border border-slate-700 rounded-lg p-4 text-slate-200 text-sm focus:border-red-500 outline-none resize-none" placeholder="Digite sua redação aqui..."></textarea>
+            </div>
+        </div>
+
+        <!-- ABA: APOSTILA COM CANETA -->
+        <div id="tab-apostila" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-pen-nib text-red-500 mr-2"></i> Caderno Digital</h2>
+                <div class="flex space-x-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
+                    <button onclick="setTool('scroll')" id="tool-scroll" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold tool-btn"><i class="fa-solid fa-hand"></i></button>
+                    <button onclick="setTool('highlight')" id="tool-highlight" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-sm font-bold tool-btn"><i class="fa-solid fa-highlighter"></i></button>
+                    <button onclick="setTool('pen')" id="tool-pen" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-sm font-bold tool-btn"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="clearCanvas()" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-sm font-bold tool-btn"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+            <div id="apostila-wrapper" class="relative w-full h-[65vh] bg-white rounded-xl overflow-y-auto border-4 border-slate-800 shadow-2xl">
+                <canvas id="draw-canvas" class="absolute top-0 left-0 pointer-events-none" style="z-index: 10; touch-action: none;"></canvas>
+                <div id="apostila-content" class="apostila-page text-slate-900 text-lg p-6 md:p-12">
+                    <h1 class="text-3xl font-bold text-center mb-8">Resumo de Segurança Pública</h1>
+                    <p class="mb-4">O Artigo 144 da Constituição define que a segurança pública é dever do Estado. Aos corpos de bombeiros militares incumbe a execução de atividades de defesa civil.</p>
+                    <div class="h-64 mt-12 border-t-2 border-dashed border-slate-300 pt-4">
+                        <p class="text-slate-400 text-sm italic">Área livre para anotações...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA: FLASHCARDS -->
+        <div id="tab-flashcards" class="hidden space-y-6 flex flex-col items-center">
+            <h2 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-clone text-red-500 mr-2"></i> Memorização Ativa</h2>
+            <div class="flip-card cursor-pointer w-full max-w-2xl" id="flashcard-container" onclick="flipCard()">
+                <div class="flip-card-inner" id="flashcard-inner">
+                    <div class="flip-card-front">
+                        <h3 class="text-2xl font-semibold text-white">O que cabe aos Corpos de Bombeiros Militares segundo a CF/88?</h3>
+                        <p class="text-xs text-slate-500 mt-6">Clique para revelar</p>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3 class="text-xl font-semibold">Defesa Civil e atribuições definidas em lei.</h3>
+                    </div>
+                </div>
+            </div>
+            <div id="flashcard-controls" class="mt-6 flex justify-center space-x-4 opacity-0 pointer-events-none">
+                <button onclick="nextCard()" class="bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg">Próximo</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // NAVEGAÇÃO DE ABAS
+        function switchTab(tabId) {
+            const tabs = ['dashboard', 'edital', 'redacao', 'apostila', 'flashcards'];
+            tabs.forEach(id => {
+                document.getElementById('tab-' + id).classList.add('hidden');
+                document.getElementById('btn-' + id).classList.remove('bg-red-600', 'text-white');
+                document.getElementById('btn-' + id).classList.add('text-slate-400', 'bg-transparent');
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('bg-red-600', 'text-white');
+            document.getElementById('btn-' + tabId).classList.remove('text-slate-400', 'bg-transparent');
+            
+            if(tabId === 'apostila') setTimeout(resizeCanvas, 100);
+        }
+
+        // ==========================================
+        // SISTEMA DE SALVAMENTO (LOCALSTORAGE)
+        // ==========================================
+
+        function loadSavedData() {
+            // 1. Carregar Checkboxes do Edital
+            const checkboxes = document.querySelectorAll('.edital-checkbox');
+            checkboxes.forEach(chk => {
+                const isChecked = localStorage.getItem(chk.id);
+                if(isChecked === 'true') chk.checked = true;
+            });
+            updateProgress();
+
+            // 2. Carregar Texto da Redação
+            const savedRedacao = localStorage.getItem('redacaoTexto');
+            if(savedRedacao) document.getElementById('texto-redacao').value = savedRedacao;
+
+            // 3. Carregar Desenhos da Apostila
+            setTimeout(() => {
+                resizeCanvas();
+                const savedCanvas = localStorage.getItem('canvasDrawing');
+                if(savedCanvas && ctx) {
+                    let img = new Image();
+                    img.src = savedCanvas;
+                    img.onload = () => { ctx.drawImage(img, 0, 0); };
+                }
+            }, 200);
+        }
+
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.edital-checkbox');
+            let checkedCount = 0;
+            checkboxes.forEach(chk => {
+                localStorage.setItem(chk.id, chk.checked); // Salva no banco local
+                if(chk.checked) checkedCount++;
+            });
+            const percent = checkboxes.length ? Math.round((checkedCount / checkboxes.length) * 100) : 0;
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('progress-text').innerText = percent + '% Concluído';
+        }
+
+        function saveRedacao() {
+            const texto = document.getElementById('texto-redacao').value;
+            localStorage.setItem('redacaoTexto', texto);
+        }
+
+        function saveCanvas() {
+            if(canvas) {
+                const dataURL = canvas.toDataURL();
+                localStorage.setItem('canvasDrawing', dataURL);
+                showSaveFeedback();
+            }
+        }
+
+        function showSaveFeedback() {
+            const status = document.getElementById('sync-status');
+            status.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Salvo!';
+            setTimeout(() => { status.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Dados Salvos no Navegador'; }, 2000);
+        }
+
+        // ==========================================
+        // CANETA & CANVAS
+        // ==========================================
+        const canvas = document.getElementById('draw-canvas');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        let isDrawing = false; let currentTool = 'scroll';
+
+        function resizeCanvas() { 
+            if(canvas) { 
+                const content = document.getElementById('apostila-content'); 
+                // Evita apagar o desenho ao redimensionar
+                const tempSave = canvas.toDataURL();
+                canvas.width = content.offsetWidth; 
+                canvas.height = content.scrollHeight; 
+                let img = new Image();
+                img.src = tempSave;
+                img.onload = () => { ctx.drawImage(img, 0, 0); };
+            } 
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function setTool(toolName) {
+            currentTool = toolName;
+            document.querySelectorAll('.tool-btn').forEach(btn => { btn.classList.remove('bg-red-600', 'text-white'); btn.classList.add('bg-slate-800', 'text-slate-300'); });
+            const activeTool = document.getElementById('tool-' + toolName);
+            activeTool.classList.add('bg-red-600', 'text-white'); activeTool.classList.remove('bg-slate-800', 'text-slate-300');
+            if(canvas) { canvas.style.pointerEvents = (toolName === 'scroll') ? 'none' : 'auto'; }
+        }
+
+        if(canvas) {
+            canvas.addEventListener('pointerdown', e => { if(currentTool === 'scroll') return; isDrawing = true; draw(e); e.preventDefault(); });
+            canvas.addEventListener('pointerup', () => { isDrawing = false; ctx.beginPath(); saveCanvas(); });
+            canvas.addEventListener('pointerout', () => { isDrawing = false; ctx.beginPath(); });
+            canvas.addEventListener('pointermove', draw);
+
+            function draw(e) {
+                if(!isDrawing) return;
+                const rect = canvas.getBoundingClientRect(); 
+                const x = e.clientX - rect.left; 
+                const y = e.clientY - rect.top;
+                
+                ctx.lineWidth = 3; ctx.lineCap = 'round';
+                if(currentTool === 'highlight') { 
+                    ctx.globalCompositeOperation = 'multiply'; 
+                    ctx.strokeStyle = 'rgba(255, 235, 59, 0.5)'; 
+                    ctx.lineWidth = 18; ctx.lineCap = 'square'; 
+                } else if(currentTool === 'pen') { 
+                    ctx.globalCompositeOperation = 'source-over'; 
+                    ctx.strokeStyle = '#ef4444'; 
+                    ctx.lineWidth = 2; 
+                }
+                ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y);
+            }
+        }
+
+        function clearCanvas() {
+            if(confirm("Apagar todas as marcações?")) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                localStorage.removeItem('canvasDrawing');
+            }
+        }
+
+        // ==========================================
+        // TIMER & FLASHCARDS
+        // ==========================================
+        let timer; let timeLeft = 25 * 60; let isRunning = false;
+        function updateDisplay() { let m = Math.floor(timeLeft/60); let s = timeLeft%60; document.getElementById("timer-display").innerText = (m<10?"0":"")+m+":"+(s<10?"0":"")+s; }
+        function startTimer() { if(!isRunning) { isRunning = true; timer = setInterval(() => { if(timeLeft>0){ timeLeft--; updateDisplay();} else {clearInterval(timer); isRunning=false; alert("Pomodoro final!");}}, 1000); } }
+        function pauseTimer() { clearInterval(timer); isRunning = false; }
+        function resetTimer() { clearInterval(timer); isRunning = false; timeLeft = 25 * 60; updateDisplay(); }
+        updateDisplay();
+
+        let cardFlipped = false;
+        function flipCard() { if(!cardFlipped) { document.getElementById('flashcard-container').classList.add('flipped'); document.getElementById('flashcard-controls').classList.remove('opacity-0', 'pointer-events-none'); cardFlipped = true; } }
+        function nextCard() { document.getElementById('flashcard-container').classList.remove('flipped'); document.getElementById('flashcard-controls').classList.add('opacity-0', 'pointer-events-none'); cardFlipped = false; }
+
+    </script>
+</body>
+</html>
